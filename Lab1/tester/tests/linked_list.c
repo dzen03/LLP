@@ -25,7 +25,6 @@ int main(void)
   linked_list_push_back(&ll, 4);
   linked_list_push_back(&ll, 5);
 
-
   struct linked_list* ll2 = linked_list_find(ll, 3);
   struct linked_list* ll3 = linked_list_find(ll, -1);
 

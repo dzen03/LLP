@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+// TODO delete, unused
 #define linked_list_def(type) \
 struct linked_list            \
 {                             \

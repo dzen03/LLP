@@ -2,14 +2,19 @@ file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
         tests/*.c
         )
 
+#add_library(test_stubs OBJECT ${common_sources})
+#target_include_directories(test_stubs PUBLIC src)
+#target_link_libraries(test_stubs PUBLIC sources)
+
+
 foreach(test_source IN LISTS test_sources)
     string(REPLACE "/" ";" name_components ${test_source})
     list(GET name_components -1 name)
-    string(REGEX REPLACE "\.c$" "" name ${name})
+    string(REGEX REPLACE "\\.c$" "" name ${name})
     list(APPEND test_targets test_${name})
 
     add_executable(test_${name} ${test_source})
-#    target_link_libraries(test_${name} PRIVATE test_stubs)
+    target_link_libraries(test_${name} PRIVATE main_sources)
     add_test(NAME test_${name} COMMAND test_${name})
 endforeach()
 
