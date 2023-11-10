@@ -1,5 +1,4 @@
 #include "backend.h"
-#include "file.h"
 
 #include <assert.h>
 
@@ -10,7 +9,7 @@ int main(void)
   write("test_file_read_write.db");
   backend_start("test_file_read_write.db");
 
-  struct file file = get_file();
+  __attribute__((unused)) struct file file = get_file();
 
   assert(file.metadata.first_node_addr != 0);
   assert(file.metadata.last_node_addr != 0);

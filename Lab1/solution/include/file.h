@@ -25,7 +25,10 @@ struct file
   {
     int64_t first_node_addr;
     int64_t last_node_addr;
-    int64_t heap_root_addr;
+    int64_t first_free_static_addr;
+    int64_t last_free_static_addr;
+    int64_t first_free_dynamic_addr;
+    int64_t last_free_dynamic_addr;
   } metadata __attribute__((packed));
 };
 

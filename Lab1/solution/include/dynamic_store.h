@@ -11,11 +11,13 @@ struct dynamic_store
   struct dynamic_store_header
   {
 //    int64_t previous_addr; // dynamic_store
-//    int64_t next_addr; // dynamic_store
+    int64_t next_addr; // dynamic_store
     uint64_t length; // in bytes
   } __attribute__((packed)) header;
   uint8_t* data; // byte array of raw data
 };
+
+#define DYNAMIC_STORE_SIZE 4096 // in bytes
 
 
 

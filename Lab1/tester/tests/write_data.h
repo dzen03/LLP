@@ -31,8 +31,9 @@ void write(char* filename)
   char *key2_ = KEY2;
   char *value1_ = VALUE1;
 
-  struct dynamic_store key1 = {{strlen(key1_) + 1}, (uint8_t *) key1_};
-  struct dynamic_store value1 = {{strlen(value1_) + 1}, (uint8_t *) value1_};
+  struct dynamic_store key1 = {{.length=strlen(key1_) + 1}, (uint8_t *) key1_};
+
+  struct dynamic_store value1 = {{.length=strlen(value1_) + 1}, (uint8_t *) value1_};
 
   int64_t key1_addr = dynamic_store_write(&key1, 0);
   assert(key1_addr >= 0);
@@ -41,21 +42,20 @@ void write(char* filename)
 
   struct property property1 = {TYPE1, key1_addr, {.addr = value1_addr}, 0};
 
-  struct dynamic_store key2 = {{strlen(key2_) + 1}, (uint8_t *) key2_};
+  struct dynamic_store key2 = {{.length=strlen(key2_) + 1}, (uint8_t *) key2_};
 
   int64_t key2_addr = dynamic_store_write(&key2, 0);
   assert(key2_addr >= 0);
 
   struct property property2 = {TYPE2, key2_addr, {VALUE2}, 0};
 
-  int64_t property1_addr = property_write(&property1, 0);
-  assert(property1_addr >= 0);
+  assert(property_write(&property1, 0) >= 0);
 //    property2.previous_property_addr = property1_addr;
   int64_t property2_addr = property_write(&property2, 0);
   assert(property2_addr >= 0);
 
   property1.next_property_addr = property2_addr;
-  property1_addr = property_write(&property1, 0);
+  int64_t property1_addr = property_write(&property1, 0);
   assert(property1_addr >= 0);
 
   struct node first_node = (struct node) {0, property1_addr};
@@ -67,7 +67,7 @@ void write(char* filename)
   assert(first_node_addr >= 0);
 
   char *relationship_name1_ = "Relationship1";
-  struct dynamic_store relationship_name1 = {{strlen(relationship_name1_) + 1}, (uint8_t *) relationship_name1_};
+  struct dynamic_store relationship_name1 = {{.length=strlen(relationship_name1_) + 1}, (uint8_t *) relationship_name1_};
   int64_t relationship_name1_addr = dynamic_store_write(&relationship_name1, 0);
   assert(relationship_name1_addr >= 0);
 
@@ -87,6 +87,4 @@ void write(char* filename)
 
   backend_stop();
 }
-
-
 #endif //LAB1_LAB1_TESTER_TESTS_WRITE_DATA_H_

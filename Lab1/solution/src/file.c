@@ -1,5 +1,6 @@
 #include "file.h"
 #include "dynamic_store.h"
+#include "utils.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -94,6 +95,11 @@ struct file file_init(char* filename)
 {
   struct file file = {0};
   file.descriptor = fopen(filename, "rb+");
+  if (file.descriptor == NULL) // no file, need to create
+    file.descriptor = fopen(filename, "wb+");
+
+  if (file.descriptor == NULL)
+    exit_with_error("Can't open or create file");
 
   // move to the file begin, because init position depends on the system
   fseek64(file.descriptor, 0, SEEK_SET);

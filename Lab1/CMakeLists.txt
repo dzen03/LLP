@@ -54,6 +54,6 @@ if(BUILD_TESTING)
 endif()
 
 cmake_policy(SET CMP0079 NEW)
-target_link_libraries(lab1 PRIVATE m)
+#target_link_libraries(lab1 PRIVATE m)
 
 set_property(TARGET lab1 PROPERTY C_STANDARD 17)

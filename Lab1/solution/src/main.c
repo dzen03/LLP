@@ -1,10 +1,10 @@
 #define _FILE_OFFSET_BITS 64
 
 #include "backend.h"
-#include "property.h"
+//#include "property.h"
 #include "utils.h"
 
-#include <stdio.h>
+
 
 int main(int argc, char** argv)
 {
@@ -14,7 +14,5 @@ int main(int argc, char** argv)
 
 
   backend_stop();
-
-  printf("%lu", sizeof(struct property));
   return 0;
 }

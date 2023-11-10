@@ -8,9 +8,8 @@ enum direction
   BIDIRECTIONAL,
   LEFT_TO_RIGHT,
   RIGHT_TO_LEFT
-};
+} __attribute__((packed));
 
-// sizeof = 65 bytes // TODO recalculate
 struct relationship
 {
   enum direction direction; // <->, ->, <-
@@ -21,15 +20,17 @@ struct relationship
 //  int64_t first_next_relationship_addr; // relationship
 //  int64_t second_previous_relationship_addr; // relationship
 //  int64_t second_next_relationship_addr; // relationship
-//  int64_t previous_relationship_add; // relationship
-//  int64_t next_relationship_add; // relationship
+  int64_t previous_relationship_addr; // relationship
+  int64_t next_relationship_addr; // relationship
+
+  uint8_t _[1]; // to create padding to get all static sized structs to 42 bytes // TODO check this
 } __attribute__((packed));
 
 struct runtime_relationship
 {
   enum direction direction;
-  struct node* first_node_addr;
-  struct node* second_node_addr;
+  struct runtime_node first_node; // TODO consider switching to pointers
+  struct runtime_node second_node; // TODO consider switching to pointers
   char* relationship_type_string;
 };
 

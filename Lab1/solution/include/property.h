@@ -12,8 +12,7 @@ enum property_type
   STRING,
 } __attribute__((packed));
 
-// sizeof = 32 + sizeof property_type = 33 bytes // TODO recalculate
-struct property // Key: value; key - string, value - any of property types
+struct property // Key: value; key - string, value - any of the property_type
 {
   enum property_type type;
   int64_t key_block_addr; // dynamic_store
@@ -25,6 +24,8 @@ struct property // Key: value; key - string, value - any of property types
   } property_block __attribute__((packed)); // either primitive type (int/double) or dynamic_store address
 //  int64_t previous_property_addr; // property
   int64_t next_property_addr; // property
+
+  uint8_t _[17]; // to create padding to get all static sized structs to 42 bytes // TODO check this
 } __attribute__((packed));
 
 struct runtime_property
