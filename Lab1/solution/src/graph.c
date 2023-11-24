@@ -41,7 +41,7 @@ void print_node(int64_t node_addr)
     switch (property.type)
     {
       case INT:
-        printf("%lld}", property.property_block.int_);
+        printf("%lld}", (unsigned long long)property.property_block.int_);
         break;
       case DOUBLE:
         printf("%f}", property.property_block.double_);

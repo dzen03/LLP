@@ -1,3 +1,7 @@
+#define _FILE_OFFSET_BITS  64
+#define _POSIX_C_SOURCE 200809L
+#define _LARGEFILE_SOURCE
+
 #include "file.h"
 #include "dynamic_store.h"
 #include "utils.h"
@@ -70,23 +74,23 @@ int dynamic_store_write_(FILE* file, int64_t addr, const struct dynamic_store* c
   return 0;
 }
 
-int dynamic_store_write_and_free_(FILE* file, int64_t addr, struct dynamic_store* store)
-{
-  int res;
-  if ((res = dynamic_store_write_(file, addr, store)) == 0)
-  {
-    free(store->data);
-  }
-  return res;
-}
+//int dynamic_store_write_and_free_(FILE* file, int64_t addr, struct dynamic_store* store)
+//{
+//  int res;
+//  if ((res = dynamic_store_write_(file, addr, store)) == 0)
+//  {
+//    free(store->data);
+//  }
+//  return res;
+//}
 
 int64_t fsizeo(FILE* file)
 {
-  int64_t current_position = ftello(file);
-  if (fseeko(file, 0, SEEK_END) != 0)
+  int64_t current_position = ftell64(file);
+  if (fseek64(file, 0, SEEK_END) != 0)
     return -1;
-  int64_t size = ftello(file);
-  if (fseeko(file, current_position, SEEK_SET) != 0)
+  int64_t size = ftell64(file);
+  if (fseek64(file, current_position, SEEK_SET) != 0)
     return -1;
   return size;
 }
@@ -158,7 +162,9 @@ int ftrunc(FILE* file, int64_t length)
 }
 
 #elif defined (LAB1_POSIX_) // POSIX compatible (UNIX || MACOS)
+#include <stdio.h>
 #include <unistd.h>
+
 
 int64_t ftell64(FILE* file)
 {

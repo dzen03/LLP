@@ -1,4 +1,5 @@
-#if (defined (__APPLE__) && defined (__MACH__))
+#define _DARWIN_C_SOURCE
+
 #include "backend.h"
 #include "file.h"
 #include "graph.h"
@@ -69,9 +70,3 @@ int main(int argc, __attribute__((unused)) char** argv)
 
   return 0;
 }
-#else
-int main(void)
-{
-  return 0;
-}
-#endif

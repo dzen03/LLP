@@ -1,4 +1,5 @@
 #include "backend.h"
+#include "file.h"
 
 #include <assert.h>
 

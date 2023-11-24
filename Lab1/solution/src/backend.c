@@ -294,13 +294,13 @@ void dynamic_store_remove(int64_t addr)
   }
 }
 
-int64_t dynamic_store_write_and_free(struct dynamic_store* data, int64_t addr)
-{
-  if (addr == 0)
-    addr = get_available_space(sizeof(struct relationship));
-  int res = dynamic_store_write_and_free_(file_.descriptor, addr, data);
-  return (res == 0 ? addr : res);
-}
+//int64_t dynamic_store_write_and_free(struct dynamic_store* data, int64_t addr)
+//{
+//  if (addr == 0)
+//    addr = get_available_space(sizeof(struct relationship));
+//  int res = dynamic_store_write_and_free_(file_.descriptor, addr, data);
+//  return (res == 0 ? addr : res);
+//}
 
 int node_read(struct node* node, int64_t addr)
 {

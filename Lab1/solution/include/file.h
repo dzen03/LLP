@@ -14,7 +14,7 @@ int static_store_write_and_free(FILE* file, int64_t addr, void* data, int64_t si
 
 int dynamic_store_read_(FILE* file, int64_t addr, struct dynamic_store* store);
 int dynamic_store_write_(FILE* file, int64_t addr, const struct dynamic_store* store);
-int dynamic_store_write_and_free_(FILE* file, int64_t addr, struct dynamic_store* store);
+//int dynamic_store_write_and_free_(FILE* file, int64_t addr, struct dynamic_store* store);
 
 int64_t fsizeo(FILE* file);
 
@@ -40,6 +40,9 @@ void file_close(FILE* file);
 #if defined __has_include
   #if __has_include(<unistd.h>)
     #define LAB1_POSIX_
+    #define _FILE_OFFSET_BITS  64
+    #define _POSIX_C_SOURCE 200809L
+    #define _LARGEFILE_SOURCE
   #elif __has_include(<fileapi.h>)
     #define LAB1_WINDOWS_
   #endif

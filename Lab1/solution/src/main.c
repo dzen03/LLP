@@ -1,5 +1,3 @@
-#define _FILE_OFFSET_BITS 64
-
 #include "backend.h"
 #include "dynamic_store.h"
 #include "utils.h"
