@@ -21,6 +21,7 @@
 #define KEY2 "Key2"
 #define VALUE1 "Value1"
 #define VALUE2 0x12345
+#define RELATIONSHIP1 "Relationship1"
 
 void write(char* filename)
 {
@@ -31,20 +32,16 @@ void write(char* filename)
   char *key2_ = KEY2;
   char *value1_ = VALUE1;
 
-  struct dynamic_store key1 = {{.length=strlen(key1_) + 1}, (uint8_t *) key1_};
 
-  struct dynamic_store value1 = {{.length=strlen(value1_) + 1}, (uint8_t *) value1_};
 
-  int64_t key1_addr = dynamic_store_write(&key1, 0);
+  int64_t key1_addr = dynamic_store_write_chain((uint8_t*) key1_, strlen(key1_) + 1, 0);
   assert(key1_addr >= 0);
-  int64_t value1_addr = dynamic_store_write(&value1, 0);
+  int64_t value1_addr = dynamic_store_write_chain((uint8_t*) value1_, strlen(value1_) + 1, 0);
   assert(value1_addr >= 0);
 
   struct property property1 = {TYPE1, key1_addr, {.addr = value1_addr}, 0};
 
-  struct dynamic_store key2 = {{.length=strlen(key2_) + 1}, (uint8_t *) key2_};
-
-  int64_t key2_addr = dynamic_store_write(&key2, 0);
+  int64_t key2_addr = dynamic_store_write_chain((uint8_t*) key2_, strlen(key2_) + 1, 0);
   assert(key2_addr >= 0);
 
   struct property property2 = {TYPE2, key2_addr, {VALUE2}, 0};
@@ -66,9 +63,8 @@ void write(char* filename)
   int64_t second_node_addr = node_write(&second_node, 0);
   assert(first_node_addr >= 0);
 
-  char *relationship_name1_ = "Relationship1";
-  struct dynamic_store relationship_name1 = {{.length=strlen(relationship_name1_) + 1}, (uint8_t *) relationship_name1_};
-  int64_t relationship_name1_addr = dynamic_store_write(&relationship_name1, 0);
+  char *relationship_name1_ = RELATIONSHIP1;
+  int64_t relationship_name1_addr = dynamic_store_write_chain((uint8_t*) relationship_name1_, strlen(relationship_name1_) + 1, 0);
   assert(relationship_name1_addr >= 0);
 
   struct relationship relationship = {BIDIRECTIONAL, first_node_addr, second_node_addr, relationship_name1_addr};

@@ -12,8 +12,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int update_metadata(void);
+int update_metadata_(void);
 
 struct file file_;
 
@@ -27,6 +28,9 @@ void check_all_requirements(void)
   static_assert(sizeof(struct node) == STATIC_STORE_SIZE, "node is not padded");
   static_assert(sizeof(struct property) == STATIC_STORE_SIZE, "property is not padded");
   static_assert(sizeof(struct relationship) == STATIC_STORE_SIZE, "relationship is not padded");
+
+
+  static_assert(sizeof(struct dynamic_store) == DYNAMIC_STORE_SIZE, "dynamic store is not padded");
 }
 
 void backend_start(char* filename)
@@ -40,7 +44,7 @@ void backend_start(char* filename)
 
 }
 
-int64_t get_available_space(int64_t size)
+int64_t get_available_space(uint64_t size)
 {
   int64_t addr;
   struct free_space space;
@@ -59,7 +63,7 @@ int64_t get_available_space(int64_t size)
         file_.metadata.first_free_dynamic_addr = file_.metadata.last_free_dynamic_addr = 0;
       else
         file_.metadata.first_free_dynamic_addr = space.next_addr;
-      update_metadata();
+      update_metadata_();
     }
   }
   else if (size == STATIC_STORE_SIZE)
@@ -76,6 +80,7 @@ int64_t get_available_space(int64_t size)
         file_.metadata.first_free_static_addr = file_.metadata.last_free_static_addr = 0;
       else
         file_.metadata.first_free_static_addr = space.next_addr;
+      update_metadata_();
     }
   }
   else
@@ -86,9 +91,15 @@ int64_t get_available_space(int64_t size)
   return addr;
 }
 
-int update_metadata(void)
+int update_metadata_(void)
 {
   return static_store_write(file_.descriptor, 0, &file_.metadata, sizeof(file_.metadata));
+}
+
+int update_metadata(struct file file)
+{
+  file_ = file;
+  return update_metadata_();
 }
 
 // invalidates previous node's local variable
@@ -126,7 +137,7 @@ int64_t node_write(struct node* data, int64_t addr)
   }
 
   if (insert)
-    res = update_metadata();
+    res = update_metadata_();
 
   return (res == 0 ? addr : res);
 }
@@ -193,7 +204,7 @@ int64_t free_space_write(struct free_space* data, int64_t addr, enum free_space_
   if (*first_free_addr_p == 0)
     *first_free_addr_p = addr;
 
-  res = update_metadata();
+  res = update_metadata_();
 
   return (res == 0 ? addr : res);
 }
@@ -204,6 +215,83 @@ int64_t dynamic_store_write(const struct dynamic_store* const data, int64_t addr
     addr = get_available_space(sizeof(struct relationship));
   int res = dynamic_store_write_(file_.descriptor, addr, data);
   return (res == 0 ? addr : res);
+}
+
+int64_t dynamic_store_write_chain(uint8_t* data, uint64_t length, int64_t addr)
+{
+  if (addr != 0)
+  {
+    dynamic_store_remove(addr);
+  }
+  int64_t res;
+  struct dynamic_store current;
+
+  // will go below zero => overflow and go above length
+  for (uint64_t ind = (length - 1) - (length - 1) % DYNAMIC_STORE_DATA_LENGTH;
+       ind <= length; ind -= DYNAMIC_STORE_DATA_LENGTH)
+  {
+    current = (struct dynamic_store){.header.next_addr=addr,
+        .header.length=(DYNAMIC_STORE_DATA_LENGTH < length - ind ? DYNAMIC_STORE_DATA_LENGTH : length - ind),
+        .data={0}};
+
+    memcpy(current.data, data + ind, current.header.length);
+
+    addr = get_available_space(DYNAMIC_STORE_SIZE);
+
+    res = dynamic_store_write_(file_.descriptor, addr, &current);
+
+    if (res != 0)
+    {
+      dynamic_store_remove(current.header.next_addr);
+      return res;
+    }
+  }
+
+  return addr;
+}
+
+// allocates memory inside!
+uint64_t dynamic_store_read_chain(uint8_t** data, int64_t addr)
+{
+  uint64_t size = 0;
+  *data = 0;
+
+  struct dynamic_store store;
+
+  while (addr != 0)
+  {
+    uint8_t* tmp = realloc(*data, size + DYNAMIC_STORE_DATA_SIZE);
+
+    if (tmp == NULL)
+      return size;
+    else
+      *data = tmp;
+
+    dynamic_store_read(&store, addr);
+
+    memcpy(*data + size, store.data, store.header.length);
+    size += store.header.length;
+
+    addr = store.header.next_addr;
+  }
+
+//  if (size != 0)
+//    *data = realloc(*data, size);
+  return size;
+}
+
+void dynamic_store_remove(int64_t addr)
+{
+  struct dynamic_store store;
+
+  while (addr != 0)
+  {
+    dynamic_store_read(&store, addr);
+
+    remove_data(addr, DYNAMIC_STORE_SIZE);
+
+    addr = store.header.next_addr;
+  }
 }
 
 int64_t dynamic_store_write_and_free(struct dynamic_store* data, int64_t addr)
@@ -234,14 +322,29 @@ int free_space_read(struct free_space* free_space, int64_t addr)
   return static_store_read(file_.descriptor, addr, free_space, sizeof(struct free_space));
 }
 
-// Inside allocates memory for data; you should free it!
-// TODO consider switching to preallocated memory instead
 int dynamic_store_read(struct dynamic_store* store, int64_t addr)
 {
   return dynamic_store_read_(file_.descriptor, addr, store);
 }
 
+int remove_data(int64_t addr, int64_t size)
+{
+  enum free_space_type type = (size == STATIC_STORE_SIZE ? STATIC : (size == DYNAMIC_STORE_SIZE ? DYNAMIC : -1));
+  struct free_space free_space = {.space = size};
 
+#ifdef DEBUG
+  uint8_t* tmp = malloc(size);
+  memset(tmp, (uint8_t)-1, size);
+
+  static_store_write(file_.descriptor, addr, tmp, size); // only for debug purposes
+
+  free(tmp);
+#endif
+
+  int64_t res = free_space_write(&free_space, addr, type);
+
+  return (res == addr ? 0 : -1);
+}
 
 void backend_stop(void)
 {

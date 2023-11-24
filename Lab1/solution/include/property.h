@@ -25,7 +25,7 @@ struct property // Key: value; key - string, value - any of the property_type
 //  int64_t previous_property_addr; // property
   int64_t next_property_addr; // property
 
-  uint8_t _[17]; // to create padding to get all static sized structs to 42 bytes // TODO check this
+  uint8_t _[33]; // to create padding to get all static sized structs
 } __attribute__((packed));
 
 struct runtime_property
@@ -36,7 +36,11 @@ struct runtime_property
   {
     int64_t int_;
     double double_;
-    char* string_;
+    struct
+    {
+      char* data;
+      uint64_t length;
+    } string_;
   } property_block;
 };
 

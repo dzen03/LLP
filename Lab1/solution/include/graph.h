@@ -15,19 +15,25 @@ void print_node(int64_t node_addr);
 //                  struct runtime_property* properties, uint64_t properties_count,
 //                  int64_t starting_node_addr);
 
-int nodes_equal(struct node* node, struct runtime_node* runtime_node);
+// Starts from node if not 0, else from the first node
+// Returns addr in file
+int nodes_equal(int64_t current_node_addr, struct runtime_node* runtime_node);
+
+// Starts from node if not 0, else from the first node
+// Returns addr in file
+int relationship_equal(int64_t current_relationship_addr, struct runtime_relationship* runtime_relationship);
 
 int64_t find_node(struct runtime_node* node, int64_t starting_node_addr);
 int64_t find_relationship(struct runtime_relationship* relationship, int64_t starting_node_addr);
 
 // without relationships
 int add_node(struct runtime_node* node);
-int add_property(struct runtime_node* node, struct runtime_property* property); // TODO do
-int add_relationship(struct runtime_relationship* relationship); // TODO do
+int add_property(struct runtime_node* node, struct runtime_property* property);
+int add_relationship(struct runtime_relationship* relationship);
 
-int remove_node(struct runtime_node* node); // TODO do
-int remove_property(struct runtime_node* node, struct runtime_property* property); // TODO do
-int remove_relationship(struct runtime_relationship* relationship); // TODO do
+void remove_node(struct runtime_node* node);
+void remove_property(struct runtime_node* node, struct runtime_property* property);
+void remove_relationship(struct runtime_relationship* relationship);
 
 // TODO add updates (?)
 

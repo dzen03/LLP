@@ -11,7 +11,7 @@ struct node
   int64_t next_node_addr; // node
   int64_t previous_node_addr; // node
 
-  uint8_t _[10]; // to create padding to get all static sized structs to 42 bytes // TODO check this
+  uint8_t _[26]; // to create padding to get all static sized structs to 42 bytes // TODO check this
 } __attribute__((packed));
 
 struct runtime_node

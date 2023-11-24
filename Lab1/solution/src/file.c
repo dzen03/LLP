@@ -48,8 +48,6 @@ int dynamic_store_read_(FILE* file, int64_t addr, struct dynamic_store* store)
     return -2;
   }
 
-  store->data = malloc(sizeof(uint8_t) * store->header.length);
-
   if (fread(store->data, sizeof(uint8_t), store->header.length, file) != store->header.length)
   {
     return -2;
@@ -64,8 +62,10 @@ int dynamic_store_write_(FILE* file, int64_t addr, const struct dynamic_store* c
     return -1;
   if (fwrite(&store->header, sizeof(struct dynamic_store_header), 1, file) != 1)
     return -2;
-  if (fwrite(store->data, sizeof(uint8_t), store->header.length, file) != store->header.length)
+  if (fwrite(store->data, sizeof(uint8_t), DYNAMIC_STORE_DATA_LENGTH, file) != DYNAMIC_STORE_DATA_LENGTH)
     return -2;
+
+  fflush(file);
 
   return 0;
 }
