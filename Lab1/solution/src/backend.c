@@ -59,10 +59,7 @@ int64_t get_available_space(uint64_t size)
     {
       addr = file_.metadata.first_free_dynamic_addr;
       free_space_read(&space, file_.metadata.first_free_dynamic_addr);
-      if (file_.metadata.first_free_dynamic_addr == file_.metadata.last_free_dynamic_addr)
-        file_.metadata.first_free_dynamic_addr = file_.metadata.last_free_dynamic_addr = 0;
-      else
-        file_.metadata.first_free_dynamic_addr = space.next_addr;
+      file_.metadata.first_free_dynamic_addr = space.next_addr;
       update_metadata_();
     }
   }
@@ -76,10 +73,7 @@ int64_t get_available_space(uint64_t size)
     {
       addr = file_.metadata.first_free_static_addr;
       free_space_read(&space, file_.metadata.first_free_static_addr);
-      if (file_.metadata.first_free_static_addr == file_.metadata.last_free_static_addr)
-        file_.metadata.first_free_static_addr = file_.metadata.last_free_static_addr = 0;
-      else
-        file_.metadata.first_free_static_addr = space.next_addr;
+      file_.metadata.first_free_static_addr = space.next_addr;
       update_metadata_();
     }
   }
@@ -168,17 +162,14 @@ int64_t free_space_write(struct free_space* data, int64_t addr, enum free_space_
     exit_with_error("Incorrect address");
 
   int64_t* first_free_addr_p;
-  int64_t* last_free_addr_p;
 
   if (type == DYNAMIC)
   {
     first_free_addr_p = &file_.metadata.first_free_dynamic_addr;
-    last_free_addr_p = &file_.metadata.last_free_dynamic_addr;
   }
   else if (type == STATIC)
   {
     first_free_addr_p = &file_.metadata.first_free_static_addr;
-    last_free_addr_p = &file_.metadata.last_free_static_addr;
   }
   else
   {
@@ -186,23 +177,22 @@ int64_t free_space_write(struct free_space* data, int64_t addr, enum free_space_
     return -1;
   }
 
-  if (file_.metadata.last_free_dynamic_addr != 0)
-  {
-    struct free_space free_space;
-    free_space_read(&free_space, *last_free_addr_p);
-    free_space.next_addr = addr;
-    static_store_write(file_.descriptor, *last_free_addr_p,&free_space, sizeof(struct free_space));
-  }
+//  if (file_.metadata.last_free_dynamic_addr != 0)
+//  {
+//    struct free_space free_space;
+//    free_space_read(&free_space, *last_free_addr_p);
+//    free_space.next_addr = addr;
+//    static_store_write(file_.descriptor, *last_free_addr_p,&free_space, sizeof(struct free_space));
+//  }
 //    data->previous_node_addr = file_.metadata.last_node_addr;
-  *last_free_addr_p = addr;
+
+  data->next_addr = *first_free_addr_p;
+  *first_free_addr_p = addr;
 
   int res;
   if ((res = static_store_write(file_.descriptor, addr, data, sizeof(struct free_space))) != 0)
     return res;
 
-
-  if (*first_free_addr_p == 0)
-    *first_free_addr_p = addr;
 
   res = update_metadata_();
 

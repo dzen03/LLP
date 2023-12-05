@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define DYNAMIC_STORE_SIZE 100 // in bytes
+#define DYNAMIC_STORE_SIZE 4096 // in bytes
 #define DYNAMIC_STORE_DATA_SIZE (DYNAMIC_STORE_SIZE - sizeof(struct dynamic_store_header))
 #define DYNAMIC_STORE_DATA_LENGTH (DYNAMIC_STORE_DATA_SIZE / sizeof(uint8_t))
 
