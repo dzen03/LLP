@@ -1,0 +1,12 @@
+query test {
+  lessThan123: hero(id < 123, alive != true) {
+    alias
+    # Queries can have comments!
+    friends(name: "Name") {
+      id
+    }
+  },
+  all: hero {
+    alias
+  }
+}
