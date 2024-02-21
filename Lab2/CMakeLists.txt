@@ -18,7 +18,7 @@ add_custom_command(OUTPUT ${antlr4-GENERATED_SRC}
         COMMAND
         ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/generated/
         COMMAND
-        java -jar ${PROJECT_SOURCE_DIR}/antlr-4.13.1-complete.jar -Werror -Dlanguage=Cpp -listener -visitor -o ${PROJECT_SOURCE_DIR}/generated/ -package antlr ${PROJECT_SOURCE_DIR}/GraphQL.g4
+        java -jar ${PROJECT_SOURCE_DIR}/antlr-4.13.1-complete.jar -Werror -Dlanguage=Cpp -listener -visitor -o ${PROJECT_SOURCE_DIR}/generated/ -package graphql ${PROJECT_SOURCE_DIR}/GraphQL.g4
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         DEPENDS GraphQL.g4)
 
@@ -32,7 +32,27 @@ foreach(src_file ${antlr4-GENERATED_SRC})
     )
 endforeach(src_file ${antlr4-GENERATED_SRC})
 
-include_directories(
+
+file(GLOB_RECURSE antlr4-runtime CONFIGURE_DEPENDS
+        ${PROJECT_SOURCE_DIR}/runtime/src/*.h
+        ${PROJECT_SOURCE_DIR}/runtime/src/misc/*.h
+        ${PROJECT_SOURCE_DIR}/runtime/src/atn/*.h
+        ${PROJECT_SOURCE_DIR}/runtime/src/dfa/*.h
+        ${PROJECT_SOURCE_DIR}/runtime/src/tree/*.h
+        ${PROJECT_SOURCE_DIR}/runtime/src/support/*.h
+        ${PROJECT_SOURCE_DIR}/generated/*.h
+
+        ${PROJECT_SOURCE_DIR}/runtime/src/*.cpp
+        ${PROJECT_SOURCE_DIR}/runtime/src/misc/*.cpp
+        ${PROJECT_SOURCE_DIR}/runtime/src/atn/*.cpp
+        ${PROJECT_SOURCE_DIR}/runtime/src/dfa/*.cpp
+        ${PROJECT_SOURCE_DIR}/runtime/src/tree/*.cpp
+        ${PROJECT_SOURCE_DIR}/runtime/src/support/*.cpp
+        ${PROJECT_SOURCE_DIR}/generated/*.cpp
+        )
+
+add_library(antlr4-runtime SHARED ${antlr4-runtime})
+target_include_directories(antlr4-runtime PUBLIC
         ${PROJECT_SOURCE_DIR}/runtime/src
         ${PROJECT_SOURCE_DIR}/runtime/src/misc
         ${PROJECT_SOURCE_DIR}/runtime/src/atn
@@ -53,7 +73,7 @@ add_executable(Lab2 ${antlr4_SRC})
 
 add_dependencies(Lab2 GenerateParser)
 
-target_link_libraries(Lab2 antlr4_static)
+target_link_libraries(Lab2 antlr4_shared antlr4-runtime)
 
 install(TARGETS Lab2
         DESTINATION "share"

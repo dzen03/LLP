@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package lab3;
+
+message Query {
+  enum TYPE {
+    SELECT = 0;
+    MODIFY = 1;
+    DELETE = 2;
+  }
+  TYPE type = 1;
+  message Selection {
+    string name = 1;
+    oneof opt_type {
+      VALUE_TYPE type = 2;
+    }
+    oneof value {
+      string string_value = 3;
+      int64 int_value = 4;
+      double double_value = 5;
+      bool bool_value = 6;
+    }
+    repeated Argument argument = 7;
+    repeated Selection subselection = 8;
+  }
+  repeated Selection selection = 2;
+}
+
+message Argument {
+  string name = 1;
+  COMPARATOR comparator = 2;
+  VALUE_TYPE type = 3;
+  oneof value {
+    string string_value = 4;
+    int64 int_value = 5;
+    double double_value = 6;
+    bool bool_value = 7;
+  }
+}
+
+enum COMPARATOR {
+  EQUAL = 0;
+  GREATER = 1;
+  LESS = 2;
+  NOT_EQUAL = 3;
+}
+
+enum VALUE_TYPE {
+  NONE = 0;
+  STRING = 1;
+  INT = 2;
+  DOUBLE = 3;
+  BOOL = 4;
+}

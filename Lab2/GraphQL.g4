@@ -5,8 +5,26 @@ document // starting rule
     ;
 
 queryDefinition
-    : 'query' name? selectionSet
+    : queryType name? selectionSet
     | selectionSet
+    ;
+
+queryType
+    : selectQuery
+    | removeQuery
+    | updateQuery
+    ;
+
+selectQuery
+    : 'select'
+    ;
+
+removeQuery
+    : 'remove'
+    ;
+
+updateQuery
+    : 'update'
     ;
 
 selectionSet
@@ -14,11 +32,8 @@ selectionSet
     ;
 
 selection
-    : field
-    ;
-
-field
-    : alias? name arguments? selectionSet?
+    : name arguments? equal value
+    | alias? name arguments? selectionSet?
     ;
 
 arguments
@@ -59,20 +74,20 @@ alias
 
 value
     : intValue
-    | floatValue
+    | doubleValue
     | stringValue
     | booleanValue
     | nullValue
-    | enumValue
-    | listValue
-    | objectValue
+//    | enumValue
+//    | listValue
+//    | objectValue
     ;
 
 intValue
     : INT
     ;
 
-floatValue
+doubleValue
     : FLOAT
     ;
 
@@ -90,35 +105,35 @@ nullValue
     : 'null'
     ;
 
-enumValue
-    : name
-    ; 
-
-listValue
-    : '[' ']'
-    | '[' value+ ']'
-    ;
-
-objectValue
-    : '{' objectField* '}'
-    ;
-
-objectField
-    : name ':' value
-    ;
-
-type_
-    : namedType '!'?
-    | listType '!'?
-    ;
-
-namedType
-    : name
-    ;
-
-listType
-    : '[' type_ ']'
-    ;
+//enumValue
+//    : name
+//    ;
+//
+//listValue
+//    : '[' ']'
+//    | '[' value+ ']'
+//    ;
+//
+//objectValue
+//    : '{' objectField* '}'
+//    ;
+//
+//objectField
+//    : name ':' value
+//    ;
+//
+//type_
+//    : namedType '!'?
+//    | listType '!'?
+//    ;
+//
+//namedType
+//    : name
+//    ;
+//
+//listType
+//    : '[' type_ ']'
+//    ;
 
 name
     : NAME

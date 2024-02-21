@@ -1,0 +1,12 @@
+select test {
+  lessThan123: hero(alive = true) {
+    alias,
+    # Queries can have comments!
+    friends(name: "Name", test = 123) {
+      id
+    },
+    test {
+      id = 1
+    }
+  }
+}

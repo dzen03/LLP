@@ -19,6 +19,6 @@ foreach(test_source IN LISTS test_sources)
 endforeach()
 
 set(CMAKE_CTEST_ARGUMENTS --output-junit ${PROJECT_SOURCE_DIR}/report.xml --output-on-failure -C $<CONFIG>)
-add_custom_target(check
+add_custom_target(lab1_check
         COMMAND ${CMAKE_CTEST_COMMAND} ${CMAKE_CTEST_ARGUMENTS}
         DEPENDS ${test_targets})

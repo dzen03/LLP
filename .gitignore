@@ -2,3 +2,4 @@
 **/*build*
 **/report.xml
 **/.DS_Store
+dist/
