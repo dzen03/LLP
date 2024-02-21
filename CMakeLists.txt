@@ -66,4 +66,3 @@ if(CLANG_TIDY)
             -warnings-as-errors=*
             )
 endif()
-

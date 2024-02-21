@@ -87,5 +87,3 @@ target_include_directories(protobuf-c PUBLIC
 target_link_libraries(protobuf-c
         ${PROTOBUF_C_ROOT}/lib/libprotobuf-c.dylib)  # dark magic used here TODO REWRITE!
 add_dependencies(protobuf-c GenerateProtobuf)
-
-
