@@ -23,12 +23,12 @@ vs
 select {
     customer {
         name
-        purchased (country: "USA", freight < 2) {
+        purchased (country: "USA", zip < 90000) {
             country
-            freight
         }
     }
 }
+
 ``` 
 Canonical data:
 
@@ -40,10 +40,12 @@ Canonical data:
 | 4 | "Liu Wong            | 59801 | "USA"   |
 
 
-I have got:
+I've got:
 ``` 
 {{name: Paula Wilson}, }-[purchased]-{{country: USA}, {zip: 87110}, }
 {{name: Jose Pavarotti}, }-[purchased]-{{country: USA}, {zip: 83720}, }
 {{name: Art Braunschweiger}, }-[purchased]-{{country: USA}, {zip: 82520}, }
 {{name: Liu Wong}, }-[purchased]-{{country: USA}, {zip: 59801}, }
 ```
+
+*IT WORKS!!!*

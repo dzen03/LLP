@@ -85,9 +85,6 @@ value
     | stringValue
     | booleanValue
     | nullValue
-//    | enumValue
-//    | listValue
-//    | objectValue
     ;
 
 intValue
@@ -111,36 +108,6 @@ stringValue
 nullValue
     : 'null'
     ;
-
-//enumValue
-//    : name
-//    ;
-//
-//listValue
-//    : '[' ']'
-//    | '[' value+ ']'
-//    ;
-//
-//objectValue
-//    : '{' objectField* '}'
-//    ;
-//
-//objectField
-//    : name ':' value
-//    ;
-//
-//type_
-//    : namedType '!'?
-//    | listType '!'?
-//    ;
-//
-//namedType
-//    : name
-//    ;
-//
-//listType
-//    : '[' type_ ']'
-//    ;
 
 name
     : NAME
