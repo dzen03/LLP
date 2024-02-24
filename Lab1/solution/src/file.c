@@ -29,6 +29,7 @@ int static_store_write(FILE* file, int64_t addr, const void* const data, int64_t
     return -1;
   if (fwrite(data, size, 1, file) != 1)
     return -2;
+  fflush(file);
 
   return 0;
 }
@@ -56,6 +57,8 @@ int dynamic_store_read_(FILE* file, int64_t addr, struct dynamic_store* store)
   {
     return -2;
   }
+
+  fflush(file);
 
   return 0;
 }

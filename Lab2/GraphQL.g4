@@ -13,6 +13,7 @@ queryType
     : selectQuery
     | removeQuery
     | updateQuery
+    | insertQuery
     ;
 
 selectQuery
@@ -25,6 +26,10 @@ removeQuery
 
 updateQuery
     : 'update'
+    ;
+
+insertQuery
+    : 'insert'
     ;
 
 selectionSet
@@ -54,10 +59,12 @@ comparator // not actual GraphQL, it allows only ':'
 equal
     : ':'
     | '='
+    | '=='
     ;
 
 notEqual
     : '!='
+    | '<>'
     ;
 
 greater

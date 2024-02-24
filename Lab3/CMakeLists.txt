@@ -87,3 +87,12 @@ target_include_directories(protobuf-c PUBLIC
 target_link_libraries(protobuf-c
         ${PROTOBUF_C_ROOT}/lib/libprotobuf-c.dylib)  # dark magic used here TODO REWRITE!
 add_dependencies(protobuf-c GenerateProtobuf)
+
+find_package(Python COMPONENTS Interpreter REQUIRED)
+
+add_custom_target(lab3-test
+        COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test.py
+        DEPENDS lab3-client lab3-server ${CMAKE_CURRENT_SOURCE_DIR}/test/test.py
+        )
+
+configure_file(test/records.json ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)

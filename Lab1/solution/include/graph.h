@@ -6,8 +6,9 @@
 
 #include <stdint.h>
 
-void print_graph(int64_t starting_relationship_addr);
+void print_graph(int64_t starting_node_addr);
 void print_node(int64_t node_addr);
+void print_relationship(int64_t relationship_addr);
 
 
 // deprecated
@@ -17,23 +18,24 @@ void print_node(int64_t node_addr);
 
 // Starts from node if not 0, else from the first node
 // Returns addr in file
-int nodes_equal(int64_t current_node_addr, struct runtime_node* runtime_node);
+int nodes_equal(int64_t current_node_addr, const struct runtime_node* runtime_node);
 
 // Starts from node if not 0, else from the first node
 // Returns addr in file
-int relationship_equal(int64_t current_relationship_addr, struct runtime_relationship* runtime_relationship);
+int relationship_equal(int64_t current_relationship_addr, const struct runtime_relationship* runtime_relationship);
 
-int64_t find_node(struct runtime_node* node, int64_t starting_node_addr);
-int64_t find_relationship(struct runtime_relationship* relationship, int64_t starting_node_addr);
+int64_t find_node(const struct runtime_node* node, int64_t starting_node_addr);
+int64_t find_relationship(const struct runtime_relationship* relationship, int64_t* starting_node_addr);
+void print_relationships(const struct runtime_relationship* relationship);
 
 // without relationships
-int add_node(struct runtime_node* node);
-int add_property(struct runtime_node* node, struct runtime_property* property);
-int add_relationship(struct runtime_relationship* relationship);
+int add_node(const struct runtime_node* node);
+int add_property(const struct runtime_node* node, const struct runtime_property* property);
+int add_relationship(const struct runtime_relationship* relationship);
 
-void remove_node(struct runtime_node* node);
-void remove_property(struct runtime_node* node, struct runtime_property* property);
-void remove_relationship(struct runtime_relationship* relationship);
+void remove_node(const struct runtime_node* node);
+void remove_property(const struct runtime_node* node, const struct runtime_property* property);
+void remove_relationship(const struct runtime_relationship* relationship);
 
 // TODO add updates (?)
 

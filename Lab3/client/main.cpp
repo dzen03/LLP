@@ -14,7 +14,7 @@
 #include <netinet/in.h>
 
 static constexpr const char* SERVER = "127.0.0.1";
-static constexpr int BUFFER_SIZE = 1024;
+static constexpr int BUFFER_SIZE = 1400;
 static constexpr int PORT = 50001;
 
 lab3::Query* query;
@@ -26,6 +26,18 @@ class MyListener : public graphql::GraphQLBaseListener {
 //  void visitTerminal(antlr4::tree::TerminalNode* node) override {
 //    std::cout << node->getText() << std::endl;
 //  }
+  void enterSelectQuery(graphql::GraphQLParser::SelectQueryContext * /*ctx*/) override {
+    query->set_type(lab3::Query_TYPE::Query_TYPE_SELECT);
+  }
+  void enterRemoveQuery(graphql::GraphQLParser::RemoveQueryContext * /*ctx*/) override {
+    query->set_type(lab3::Query_TYPE::Query_TYPE_DELETE);
+  }
+  void enterUpdateQuery(graphql::GraphQLParser::UpdateQueryContext * /*ctx*/) override {
+    query->set_type(lab3::Query_TYPE::Query_TYPE_MODIFY);
+  }
+  void enterInsertQuery(graphql::GraphQLParser::InsertQueryContext * /*ctx*/) override {
+    query->set_type(lab3::Query_TYPE::Query_TYPE_INSERT);
+  }
 
   void enterSelection(graphql::GraphQLParser::SelectionContext * ctx) override {
     if (qs_stack.top() == nullptr)
@@ -38,7 +50,7 @@ class MyListener : public graphql::GraphQLBaseListener {
     qs_stack.pop();
   }
 
-  void enterArguments(graphql::GraphQLParser::ArgumentsContext * /*ctx*/) override {
+  void enterArgument(graphql::GraphQLParser::ArgumentContext * /*ctx*/) override {
     current_argument = qs_stack.top()->add_argument();
   }
 
@@ -95,11 +107,11 @@ class MyListener : public graphql::GraphQLBaseListener {
 
   void enterStringValue(graphql::GraphQLParser::StringValueContext * ctx) override {
     if (current_argument != nullptr) {
-      current_argument->set_string_value(ctx->getText());
+      current_argument->set_string_value(ctx->getText().substr(1, ctx->getText().length() - 2) + "\0");
       current_argument->set_type(lab3::VALUE_TYPE::STRING);
     }
     else {
-      qs_stack.top()->set_string_value(ctx->getText());
+      qs_stack.top()->set_string_value(ctx->getText().substr(1, ctx->getText().length() - 2) + "\0");
       qs_stack.top()->set_type(lab3::VALUE_TYPE::STRING);
     }
   }
@@ -115,7 +127,7 @@ class MyListener : public graphql::GraphQLBaseListener {
 
 
 
-  void exitArguments(graphql::GraphQLParser::ArgumentsContext * /*ctx*/) override {
+  void exitArgument(graphql::GraphQLParser::ArgumentContext * /*ctx*/) override {
     current_argument = nullptr;
   }
 
@@ -140,15 +152,19 @@ class MyListener : public graphql::GraphQLBaseListener {
 int send_to_server(std::string& );
 
 
-int main(int , const char **) {
+int main(int argc, const char** argv) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
+  if (argc != 2) {
+    std::cerr << "Pass filename as an argument!";
+    return 1;
+  }
 
   int ret_code = 0;
 
   query = new lab3::Query();
   qs_stack.push(nullptr);
 
-  std::ifstream inputStream("test_query");
+  std::ifstream inputStream(argv[1]);
 
   antlr4::ANTLRInputStream input(inputStream);
   graphql::GraphQLLexer lexer(&input);

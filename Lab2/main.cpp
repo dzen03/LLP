@@ -5,7 +5,7 @@
 #include "GraphQLLexer.h"
 #include "GraphQLParser.h"
 
-using namespace antlr;
+using namespace graphql;
 using namespace antlr4;
 
 int main(int , const char **) {

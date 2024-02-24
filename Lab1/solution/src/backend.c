@@ -224,7 +224,7 @@ int64_t dynamic_store_write_chain(uint8_t* data, uint64_t length, int64_t addr)
         .header.length=(DYNAMIC_STORE_DATA_LENGTH < length - ind ? DYNAMIC_STORE_DATA_LENGTH : length - ind),
         .data={0}};
 
-    memcpy(current.data, data + ind, current.header.length);
+    memcpy(current.data, data + ind, current.header.length); // NOLINT
 
     addr = get_available_space(DYNAMIC_STORE_SIZE);
 
@@ -259,7 +259,7 @@ uint64_t dynamic_store_read_chain(uint8_t** data, int64_t addr)
 
     dynamic_store_read(&store, addr);
 
-    memcpy(*data + size, store.data, store.header.length);
+    memcpy(*data + size, store.data, store.header.length); // NOLINT
     size += store.header.length;
 
     addr = store.header.next_addr;

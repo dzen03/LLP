@@ -7,6 +7,7 @@ message Query {
     SELECT = 0;
     MODIFY = 1;
     DELETE = 2;
+    INSERT = 3;
   }
   TYPE type = 1;
   message Selection {

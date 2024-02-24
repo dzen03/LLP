@@ -42,6 +42,12 @@ struct runtime_property
       uint64_t length;
     } string_;
   } property_block;
+  enum {
+    EQUAL = 0,
+    GREATER,
+    LESS,
+    NOT_EQUAL
+  } comparator;
 };
 
 //struct property* property_read(FILE* file, int64_t addr);

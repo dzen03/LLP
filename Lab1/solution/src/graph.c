@@ -10,18 +10,28 @@
 
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h>
-//#include <stdlib.h>
 #include <string.h>
 
-// for debug only, do not use in prod, it can and will overflow the stack
-void print_graph(int64_t starting_relationship_addr)
+// f̶o̶r̶ ̶d̶e̶b̶u̶g̶ ̶o̶n̶l̶y̶,̶ ̶d̶o̶ ̶n̶o̶t̶ ̶u̶s̶e̶ ̶i̶n̶ ̶p̶r̶o̶d̶,̶ ̶i̶t̶ ̶c̶a̶n̶ ̶a̶n̶d̶ ̶w̶i̶l̶l̶ ̶o̶v̶e̶r̶f̶l̶o̶w̶ ̶t̶h̶e̶ ̶s̶t̶a̶c̶k̶
+void print_graph(int64_t starting_node_addr)
 {
+  struct file file = get_file();
 
+  int64_t current_node_addr = (starting_node_addr == 0 ? file.metadata.first_node_addr : starting_node_addr);
+
+  while (current_node_addr != 0) {
+    print_node(current_node_addr);
+
+    struct node node;
+    node_read(&node, current_node_addr);
+
+    current_node_addr = node.next_node_addr;
+  }
 }
 
 void print_node(int64_t node_addr)
 {
+  string_buffer_printf("%s", "{");
   struct node node;
   node_read(&node, node_addr);
 
@@ -36,19 +46,19 @@ void print_node(int64_t node_addr)
 
     dynamic_store_read(&key, property.key_block_addr);
 
-    printf("{%s: ", key.data);
+    string_buffer_printf("{%s: ", key.data);
 
     switch (property.type)
     {
       case INT:
-        printf("%lld}", (unsigned long long)property.property_block.int_);
+        string_buffer_printf("%lld}, ", (unsigned long long)property.property_block.int_);
         break;
       case DOUBLE:
-        printf("%f}", property.property_block.double_);
+        string_buffer_printf("%f}, ", property.property_block.double_);
         break;
       case STRING:
         dynamic_store_read(&value, property.property_block.addr);
-        printf("%s}", value.data);
+        string_buffer_printf("%s}, ", value.data);
         break;
       default:
         exit_with_error("Unknown type in the property value field.");
@@ -56,13 +66,27 @@ void print_node(int64_t node_addr)
 
     next_property_addr = property.next_property_addr;
   }
+
+  string_buffer_printf("%s", "}");
+}
+
+void print_relationship(int64_t relationship_addr)
+{
+  struct relationship relationship;
+  relationship_read(&relationship, relationship_addr);
+
+  struct dynamic_store key;
+
+  dynamic_store_read(&key, relationship.relationship_type_block_addr);
+
+  string_buffer_printf("-[%s]-", key.data);
 }
 
 #define DOUBLE_EQUALITY_PRECISION 1e-5
 
 // Starts from node if not 0, else from the first node
 // Returns addr in file or -1 if nothing found
-int64_t find_node(struct runtime_node* node, int64_t starting_node_addr)
+int64_t find_node(const struct runtime_node* const node, int64_t starting_node_addr)
 {
   struct file file = get_file();
 
@@ -73,17 +97,27 @@ int64_t find_node(struct runtime_node* node, int64_t starting_node_addr)
     struct node current_node;
     node_read(&current_node, current_node_addr);
 
+    if (starting_node_addr != 0) { // skip starting addr
+      starting_node_addr = 0;
+      current_node_addr = current_node.next_node_addr;
+      continue;
+    }
+
     if (nodes_equal(current_node_addr, node))
       return current_node_addr;
 
+    if (current_node_addr == current_node.next_node_addr)
+      break;
     current_node_addr = current_node.next_node_addr;
   }
 
   return -1;
 }
 
+int property_equal(int64_t current_property_addr, const struct runtime_property* runtime_property);
 
-int nodes_equal(int64_t current_node_addr, struct runtime_node* runtime_node)
+
+int nodes_equal(int64_t current_node_addr, const struct runtime_node* const runtime_node)
 {
   struct node node;
   node_read(&node, current_node_addr);
@@ -104,18 +138,20 @@ int nodes_equal(int64_t current_node_addr, struct runtime_node* runtime_node)
 
     for (struct runtime_property* property = properties; property < properties + properties_count; ++property)
     {
-      int equals = 1;
 
-
-      if(equals)
+      if(property_equal(current_property_addr, property))
       {
         --need_to_find_properties;
         break;
       }
     }
 
+    if (current_property_addr == current_property.next_property_addr)
+      break;
     current_property_addr = current_property.next_property_addr;
   }
+  if (need_to_find_properties)
+    return 0;
 
   int64_t current_relationship_addr = node.next_relationship_addr;
 
@@ -139,10 +175,11 @@ int nodes_equal(int64_t current_node_addr, struct runtime_node* runtime_node)
         current_relationship.first_next_relationship_addr : current_relationship.second_next_relationship_addr);
   }
 
-  return (need_to_find_properties == 0 && need_to_find_relationships == 0);
+  return need_to_find_relationships == 0 || 1;
 }
 
-int relationship_equal(int64_t current_relationship_addr, struct runtime_relationship* runtime_relationship)
+int relationship_equal(int64_t current_relationship_addr,
+                       const struct runtime_relationship* const runtime_relationship)
 {
   struct relationship current_relationship;
   relationship_read(&current_relationship, current_relationship_addr);
@@ -181,7 +218,59 @@ int relationship_equal(int64_t current_relationship_addr, struct runtime_relatio
   return found;
 }
 
-int property_equal(int64_t current_property_addr, struct runtime_property* runtime_property)
+int compare(const struct property* const property,
+    const struct runtime_property* const runtime_property) {
+  struct dynamic_store value;
+  int res = 0;
+
+  if (runtime_property->comparator == EQUAL || runtime_property->comparator == NOT_EQUAL) {
+    switch (property->type)
+    {
+      case INT:
+        res = (property->property_block.int_ == runtime_property->property_block.int_);
+        break;
+      case DOUBLE:
+        res = (fabs(property->property_block.double_ - runtime_property->property_block.double_) < DOUBLE_EQUALITY_PRECISION);
+        break;
+      case STRING:
+        dynamic_store_read(&value, property->property_block.addr);
+        res = (strcmp((char*)value.data, runtime_property->property_block.string_.data) == 0);
+        break;
+      default:
+        exit_with_error("Unknown type in the property value field.");
+    }
+  }
+  else if (runtime_property->comparator == LESS || runtime_property->comparator == GREATER) {
+    // runtime < (aka less) property
+    switch (property->type)
+    {
+      case INT:
+        res = (property->property_block.int_ > runtime_property->property_block.int_);
+        break;
+      case DOUBLE:
+        res = (property->property_block.double_ > runtime_property->property_block.double_);
+        break;
+      case STRING:
+        dynamic_store_read(&value, property->property_block.addr);
+        res = (strcmp((char*)value.data, runtime_property->property_block.string_.data) > 0);
+        break;
+      default:
+        exit_with_error("Unknown type in the property value field.");
+    }
+  }
+  else {
+    exit_with_error("Unknown type of comparator.");
+  }
+
+  if (runtime_property->comparator == NOT_EQUAL || runtime_property->comparator == LESS) {
+    res = !res;
+  }
+
+  return res;
+}
+
+
+int property_equal(int64_t current_property_addr, const struct runtime_property* const runtime_property)
 {
   struct property current_property;
   property_read(&current_property, current_property_addr);
@@ -198,35 +287,19 @@ int property_equal(int64_t current_property_addr, struct runtime_property* runti
     return 0;
   }
 
-  struct dynamic_store value;
-  int equals;
-
-  switch (current_property.type)
-  {
-    case INT:
-      equals = (current_property.property_block.int_ == runtime_property->property_block.int_);
-      break;
-    case DOUBLE:
-      equals = (fabs(current_property.property_block.double_ - runtime_property->property_block.double_) < DOUBLE_EQUALITY_PRECISION);
-      break;
-    case STRING:
-      dynamic_store_read(&value, current_property.property_block.addr);
-      equals = (strcmp((char*)value.data, runtime_property->property_block.string_.data) == 0);
-      break;
-    default:
-      exit_with_error("Unknown type in the property value field.");
-  }
-
-  return equals;
+  return compare(&current_property, runtime_property);
 }
 
 // Starts from node if not 0, else from the first node
 // Returns addr in file
-int64_t find_relationship(struct runtime_relationship* relationship, int64_t starting_node_addr)
+int64_t find_relationship(const struct runtime_relationship* const relationship, int64_t* starting_node_addr)
 {
-  int64_t current_node_addr = starting_node_addr;
-  int64_t current_relationship_addr = -2;
-  while (current_node_addr != 0)
+  int64_t current_node_addr = 0;
+  if (starting_node_addr != NULL)
+    current_node_addr = *starting_node_addr;
+
+  int64_t current_relationship_addr;
+  while (current_node_addr != -1)
   {
     current_node_addr = find_node(&relationship->first_node, current_node_addr);
 
@@ -240,44 +313,95 @@ int64_t find_relationship(struct runtime_relationship* relationship, int64_t sta
 
     while (current_relationship_addr != 0) // searching if arguments are subset of our properties
     {
-      if (relationship_equal(current_relationship_addr, relationship))
+      if (relationship_equal(current_relationship_addr, relationship)) {
+        if (starting_node_addr != NULL)
+          *starting_node_addr = current_node_addr;
         return current_relationship_addr;
+      }
+      struct relationship rl;
+      relationship_read(&rl, current_relationship_addr);
+
+      current_relationship_addr = rl.first_next_relationship_addr;
     }
   }
 
   return -2;
 }
 
-int add_node(struct runtime_node* node)
+void print_relationships(const struct runtime_relationship* const relationship)
 {
+  struct file file = get_file();
+
+  int64_t current_node_addr = file.metadata.first_node_addr;
+
+
+  int64_t current_relationship_addr;
+  while (current_node_addr > 0)
+  {
+    struct node node;
+    node_read(&node, current_node_addr);
+
+    if (!nodes_equal(current_node_addr, &relationship->first_node))
+      continue;
+
+    current_relationship_addr = node.next_relationship_addr;
+
+    while (current_relationship_addr != 0) // searching if arguments are subset of our properties
+    {
+      struct relationship rl;
+      relationship_read(&rl, current_relationship_addr);
+
+      if (relationship_equal(current_relationship_addr, relationship)
+          && current_node_addr == rl.first_node_addr) {
+        print_node(rl.first_node_addr);
+        print_relationship(current_relationship_addr);
+        print_node(rl.second_node_addr);
+      }
+
+      current_relationship_addr = rl.first_next_relationship_addr;
+    }
+
+    if (current_node_addr == node.next_node_addr)
+      break;
+    current_node_addr = node.next_node_addr;
+  }
+
+}
+
+int add_node(const struct runtime_node* const node)
+{
+  if (find_node(node, 0) > 0)
+    return 0;
+
   int res = 0;
   struct runtime_property* properties = node->properties;
   int64_t properties_count = node->properties_count;
 
   int64_t prev_property_addr = 0;
 
-  for (struct runtime_property* property = properties + properties_count - 1; property >= properties; --property)
-  {
-    int64_t key1_addr = dynamic_store_write_chain((uint8_t*)property->key_string, strlen(property->key_string) + 1, 0);
-
-    int64_t value1_addr;
-    struct property property1;
-    switch (property->type)
+  if (properties_count > 0)
+    for (struct runtime_property* property = properties + properties_count - 1; property >= properties; --property)
     {
-      case STRING:
-        value1_addr = dynamic_store_write_chain((uint8_t*)property->property_block.string_.data,
-                                                        property->property_block.string_.length, 0);
-        res = (value1_addr >= 0 ? 0 : -1);
+      int64_t key1_addr = dynamic_store_write_chain((uint8_t*)property->key_string, strlen(property->key_string) + 1, 0);
 
-        property1 = (struct property){property->type, key1_addr, {.addr = value1_addr}, prev_property_addr};
-        break;
-      case INT:
-        property1 = (struct property){property->type, key1_addr, {.int_ = property->property_block.int_}, prev_property_addr};
-        break;
-      case DOUBLE:
-        property1 = (struct property){property->type, key1_addr, {.double_ = property->property_block.double_}, prev_property_addr};
-        break;
-    }
+      int64_t value1_addr;
+      struct property property1;
+      switch (property->type)
+      {
+        case STRING:
+          value1_addr = dynamic_store_write_chain((uint8_t*)property->property_block.string_.data,
+                                                          property->property_block.string_.length, 0);
+          res = (value1_addr >= 0 ? 0 : -1);
+
+          property1 = (struct property){property->type, key1_addr, {.addr = value1_addr}, prev_property_addr};
+          break;
+        case INT:
+          property1 = (struct property){property->type, key1_addr, {.int_ = property->property_block.int_}, prev_property_addr};
+          break;
+        case DOUBLE:
+          property1 = (struct property){property->type, key1_addr, {.double_ = property->property_block.double_}, prev_property_addr};
+          break;
+      }
     if (res != 0)
       return res;
 
@@ -291,7 +415,7 @@ int add_node(struct runtime_node* node)
   return (first_node_addr >= 0 ? 0 : -1);
 }
 
-int add_property(struct runtime_node* node, struct runtime_property* property)
+int add_property(const struct runtime_node* const node, const struct runtime_property* const property)
 {
   int64_t node_addr = find_node(node, 0);
 
@@ -337,7 +461,7 @@ int add_property(struct runtime_node* node, struct runtime_property* property)
   return res;
 }
 
-int add_relationship(struct runtime_relationship* relationship)
+int add_relationship(const struct runtime_relationship* const relationship)
 {
   int64_t node1_addr = find_node(&relationship->first_node, 0);
   int64_t node2_addr = find_node(&relationship->second_node, 0);
@@ -388,7 +512,7 @@ int add_relationship(struct runtime_relationship* relationship)
   return 0;
 }
 
-void remove_node(struct runtime_node* node)
+void remove_node(const struct runtime_node* const node)
 {
   int64_t node_addr = find_node(node, 0);
 
@@ -463,7 +587,7 @@ void remove_node(struct runtime_node* node)
   remove_data(node_addr, sizeof(struct node));
 }
 
-void remove_property(struct runtime_node* node, struct runtime_property* property)
+void remove_property(const struct runtime_node* const node, const struct runtime_property* const property)
 {
   int64_t node_addr = find_node(node, 0);
 
@@ -518,7 +642,7 @@ void remove_property(struct runtime_node* node, struct runtime_property* propert
   }
 }
 
-void remove_relationship(struct runtime_relationship* relationship)
+void remove_relationship(const struct runtime_relationship* const relationship)
 {
   int64_t relationship_addr = find_relationship(relationship, 0);
   struct relationship relationship_;
