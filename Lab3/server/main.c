@@ -18,15 +18,162 @@
 #define BUFFER_SIZE 1400
 #define PORT 50001
 
+void dump_node(int64_t node_addr, struct Lab3__Result__Chain__Node* result_node)
+{
+
+  struct node node;
+  node_read(&node, node_addr);
+
+  int64_t next_property_addr = node.next_property_addr;
+
+  struct property property;
+  struct dynamic_store key;
+  struct dynamic_store value;
+
+  result_node->fields = malloc(sizeof(struct Lab3__Result__Chain__Node__Field*) * 100);
+  result_node->n_fields = 0;
+
+  while (next_property_addr != 0)
+  {
+    property_read(&property, next_property_addr);
+
+    dynamic_store_read(&key, property.key_block_addr);
+
+    result_node->fields[result_node->n_fields] = malloc(sizeof(struct Lab3__Result__Chain__Node__Field));
+    lab3__result__chain__node__field__init(result_node->fields[result_node->n_fields]);
+
+    result_node->fields[result_node->n_fields]->key = malloc(sizeof (char) * key.header.length);
+    memcpy(result_node->fields[result_node->n_fields]->key, &key.data, key.header.length);
+
+//    string_buffer_printf("{%s: ", key.data);
+
+
+    switch (property.type)
+    {
+      case INT:
+        result_node->fields[result_node->n_fields]->type = LAB3__VALUE__TYPE__INT;
+        result_node->fields[result_node->n_fields]->value_case = LAB3__RESULT__CHAIN__NODE__FIELD__VALUE_INT_VALUE;
+        result_node->fields[result_node->n_fields]->int_value = property.property_block.int_;
+//      string_buffer_printf("%lld}, ", (unsigned long long)property.property_block.int_);
+        break;
+      case DOUBLE:
+        result_node->fields[result_node->n_fields]->type = LAB3__VALUE__TYPE__DOUBLE;
+        result_node->fields[result_node->n_fields]->value_case = LAB3__RESULT__CHAIN__NODE__FIELD__VALUE_DOUBLE_VALUE;
+        result_node->fields[result_node->n_fields]->double_value = property.property_block.double_;
+//      string_buffer_printf("%f}, ", property.property_block.double_);
+        break;
+      case STRING:
+        dynamic_store_read(&value, property.property_block.addr);
+        result_node->fields[result_node->n_fields]->type = LAB3__VALUE__TYPE__STRING;
+        result_node->fields[result_node->n_fields]->value_case = LAB3__RESULT__CHAIN__NODE__FIELD__VALUE_STRING_VALUE;
+        result_node->fields[result_node->n_fields]->string_value = malloc(sizeof (char) * value.header.length);
+        memcpy(result_node->fields[result_node->n_fields]->string_value, &value.data, value.header.length);
+//        string_buffer_printf("%s}, ", value.data);
+        break;
+      default:
+        exit_with_error("Unknown type in the property value field.");
+    }
+
+    ++result_node->n_fields;
+
+    next_property_addr = property.next_property_addr;
+  }
+}
+
+void dump_relationship(int64_t relationship_addr, struct Lab3__Result__Chain__Relation* result_relation)
+{
+  struct relationship relationship;
+  relationship_read(&relationship, relationship_addr);
+
+  struct dynamic_store key;
+
+  dynamic_store_read(&key, relationship.relationship_type_block_addr);
+
+//  string_buffer_printf("-[%s]-", key.data);
+  switch (relationship.direction) {
+    case BIDIRECTIONAL:
+      result_relation->direction=LAB3__RESULT__CHAIN__RELATION__DIRECTIONS__BIDIRECTIONAL;
+      break;
+    case LEFT_TO_RIGHT:
+      result_relation->direction=LAB3__RESULT__CHAIN__RELATION__DIRECTIONS__LEFT_TO_RIGHT;
+      break;
+    case RIGHT_TO_LEFT:
+      result_relation->direction=LAB3__RESULT__CHAIN__RELATION__DIRECTIONS__RIGHT_TO_LEFT;
+      break;
+  }
+  result_relation->name = malloc(sizeof (char) * key.header.length);
+  memcpy(result_relation->name, key.data, key.header.length);
+}
+
+void dump_relationships(const struct runtime_relationship* const relationship, struct Lab3__Result* result)
+{
+  struct file file = get_file();
+
+  int64_t current_node_addr = file.metadata.first_node_addr;
+
+  result->chains = malloc(sizeof(struct Lab3__Result__Chain*) * 100);
+  result->n_chains = 0;
+
+  int64_t current_relationship_addr;
+  while (current_node_addr > 0)
+  {
+    struct node node;
+    node_read(&node, current_node_addr);
+
+    if (!nodes_equal(current_node_addr, &relationship->first_node))
+      continue;
+
+    current_relationship_addr = node.next_relationship_addr;
+
+    while (current_relationship_addr != 0) // searching if arguments are subset of our properties
+    {
+      struct relationship rl;
+      relationship_read(&rl, current_relationship_addr);
+
+      if (relationship_equal(current_relationship_addr, relationship)
+          && current_node_addr == rl.first_node_addr) {
+        result->chains[result->n_chains] = malloc(sizeof(struct Lab3__Result__Chain));
+        lab3__result__chain__init(result->chains[result->n_chains]);
+
+        result->chains[result->n_chains]->nodes = malloc(sizeof(struct Lab3__Result__Chain__Node*) * 2);
+        result->chains[result->n_chains]->relations = malloc(sizeof(struct Lab3__Result__Chain__Relation*) * 1);
+
+        result->chains[result->n_chains]->nodes[0] = malloc(sizeof(Lab3__Result__Chain__Node));
+        result->chains[result->n_chains]->nodes[1] = malloc(sizeof(Lab3__Result__Chain__Node));
+        result->chains[result->n_chains]->relations[0] = malloc(sizeof(Lab3__Result__Chain__Relation));
+
+        lab3__result__chain__node__init(result->chains[result->n_chains]->nodes[0]);
+        lab3__result__chain__node__init(result->chains[result->n_chains]->nodes[1]);
+        lab3__result__chain__relation__init(result->chains[result->n_chains]->relations[0]);
+
+        dump_node(rl.first_node_addr, result->chains[result->n_chains]->nodes[0]);
+        dump_relationship(current_relationship_addr, result->chains[result->n_chains]->relations[0]);
+        dump_node(rl.second_node_addr, result->chains[result->n_chains]->nodes[1]);
+
+        result->chains[result->n_chains]->n_nodes = 2;
+        result->chains[result->n_chains]->n_relations = 1;
+        ++result->n_chains;
+      }
+
+      current_relationship_addr = rl.first_next_relationship_addr;
+    }
+
+    if (current_node_addr == node.next_node_addr)
+      break;
+    current_node_addr = node.next_node_addr;
+  }
+}
 
 
 struct runtime_node parse_selections(const struct Lab3__Query__Selection* const selection,
-    Lab3__Query__TYPE type) {
+    Lab3__Query__TYPE type, struct Lab3__Result* result) {
   static int cnt = 0;
   struct runtime_node current_node = {0};
   current_node.properties = malloc(sizeof(struct runtime_property) * (selection->n_argument + selection->n_subselection));
-  if (!current_node.properties)
+  if (!current_node.properties){
     exit_with_error("memory problem");
+    return (struct runtime_node){0};
+  }
 
 
   if (type != LAB3__QUERY__TYPE__INSERT) {
@@ -118,14 +265,11 @@ struct runtime_node parse_selections(const struct Lab3__Query__Selection* const 
   if (type == LAB3__QUERY__TYPE__DELETE)
     remove_node(&current_node);
 
-  int found_child = 0;
-
   for (uint64_t ind = 0; ind < selection->n_subselection; ++ind) {
     const struct Lab3__Query__Selection *const sel = selection->subselection[ind];
     if (sel->opt_type_case == LAB3__QUERY__SELECTION__OPT_TYPE__NOT_SET && sel->n_subselection != 0) {
-      found_child = 1;
       ++cnt;
-      struct runtime_node node = parse_selections(sel, type);
+      struct runtime_node node = parse_selections(sel, type, result);
       --cnt;
       struct runtime_relationship relationship = {.direction=BIDIRECTIONAL,
           .first_node=current_node, .second_node=node,
@@ -136,21 +280,7 @@ struct runtime_node parse_selections(const struct Lab3__Query__Selection* const 
       if (type == LAB3__QUERY__TYPE__DELETE)
         remove_relationship(&relationship);
       if (type == LAB3__QUERY__TYPE__SELECT) {
-//        struct runtime_node tmp = relationship.second_node;
-//        relationship.second_node = relationship.first_node;
-//        relationship.first_node = tmp; // fucking swap hack to select properly. don't have time to fix it now
-
-//        int64_t cna = 0;
-//        int64_t current_rel_addr = find_relationship(&relationship, &cna);
-//        while (current_rel_addr >= 0) {
-//          struct relationship rl;
-//          relationship_read(&rl, current_rel_addr);
-//          print_node(rl.first_node_addr);
-//          print_relationship(current_rel_addr);
-//          print_node(rl.second_node_addr);
-//          current_rel_addr = find_relationship(&relationship, &cna);
-//        }
-        print_relationships(&relationship);
+        dump_relationships(&relationship, result);
       }
       free(node.properties);
     }
@@ -159,21 +289,21 @@ struct runtime_node parse_selections(const struct Lab3__Query__Selection* const 
   return current_node;
 }
 
-void parse_query(struct Lab3__Query* query) {
+void parse_query(struct Lab3__Query* query, struct Lab3__Result* result) {
   for (uint64_t ind = 0; ind < query->n_selection; ++ind) {
-    struct runtime_node tmp = parse_selections(query->selection[ind], query->type);
+    struct runtime_node tmp = parse_selections(query->selection[ind], query->type, result);
     free(tmp.properties);
   }
 }
 
-void update_query(struct Lab3__Query* query) {
+void update_query(struct Lab3__Query* query, struct Lab3__Result* result) {
   assert(query->type == LAB3__QUERY__TYPE__MODIFY);
 
   query->type = LAB3__QUERY__TYPE__DELETE;
-  parse_query(query);
+  parse_query(query, result);
 
   query->type = LAB3__QUERY__TYPE__INSERT;
-  parse_query(query);
+  parse_query(query, result);
 }
 
 
@@ -253,33 +383,39 @@ int main(int argc, char** argv)
     struct Lab3__Query* query;
     query = lab3__query__unpack(NULL, msg_size, buff);
 
+    struct Lab3__Result result = LAB3__RESULT__INIT;
+
     switch (query->type) {
       case LAB3__QUERY__TYPE__SELECT:
         string_buffer_init();
       case LAB3__QUERY__TYPE__INSERT:
       case LAB3__QUERY__TYPE__DELETE:
-        parse_query(query);
+        parse_query(query, &result);
         break;
       case LAB3__QUERY__TYPE__MODIFY:
-        update_query(query);
+        update_query(query, &result);
         break;
     }
 
     fflush(string_buffer_get().file);
-    if (query->type != LAB3__QUERY__TYPE__SELECT) {
-      string_buffer_init();
-      string_buffer_printf("%s", "done");
-//      print_graph(0); // debug
-    }
-    else if (string_buffer_get().size == 0) {
-      string_buffer_printf("%s", "nothing");
-    }
+//    if (query->type != LAB3__QUERY__TYPE__SELECT) {
+//      string_buffer_init();
+////      string_buffer_printf("%s", "done");
+////      print_graph(0); // debug
+//    }
+//    else if (string_buffer_get().size == 0) {
+////      string_buffer_printf("%s", "nothing");
+//    }
 //    print_graph(0);
     fflush(string_buffer_get().file);
 
-    write(conn_fd, string_buffer_get().data, (string_buffer_get().size < BUFFER_SIZE ?
-                                              string_buffer_get().size : BUFFER_SIZE));
-    lab3__query__free_unpacked(query, NULL);
+    uint8_t* buffer = malloc(sizeof(uint8_t) * BUFFER_SIZE);
+    uint64_t tmp = lab3__result__get_packed_size(&result);
+
+    lab3__result__pack(&result, buffer);
+
+    write(conn_fd, buffer, tmp);
+//    lab3__query__free_unpacked(query, NULL);
   }
 
 EXIT:

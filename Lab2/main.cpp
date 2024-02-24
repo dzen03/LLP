@@ -9,7 +9,7 @@ using namespace graphql;
 using namespace antlr4;
 
 int main(int , const char **) {
-  std::ifstream inputStream("../test_query");
+  std::ifstream inputStream("test_query");
 
   ANTLRInputStream input(inputStream);
   GraphQLLexer lexer(&input);

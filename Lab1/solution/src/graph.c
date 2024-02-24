@@ -328,46 +328,6 @@ int64_t find_relationship(const struct runtime_relationship* const relationship,
   return -2;
 }
 
-void print_relationships(const struct runtime_relationship* const relationship)
-{
-  struct file file = get_file();
-
-  int64_t current_node_addr = file.metadata.first_node_addr;
-
-
-  int64_t current_relationship_addr;
-  while (current_node_addr > 0)
-  {
-    struct node node;
-    node_read(&node, current_node_addr);
-
-    if (!nodes_equal(current_node_addr, &relationship->first_node))
-      continue;
-
-    current_relationship_addr = node.next_relationship_addr;
-
-    while (current_relationship_addr != 0) // searching if arguments are subset of our properties
-    {
-      struct relationship rl;
-      relationship_read(&rl, current_relationship_addr);
-
-      if (relationship_equal(current_relationship_addr, relationship)
-          && current_node_addr == rl.first_node_addr) {
-        print_node(rl.first_node_addr);
-        print_relationship(current_relationship_addr);
-        print_node(rl.second_node_addr);
-      }
-
-      current_relationship_addr = rl.first_next_relationship_addr;
-    }
-
-    if (current_node_addr == node.next_node_addr)
-      break;
-    current_node_addr = node.next_node_addr;
-  }
-
-}
-
 int add_node(const struct runtime_node* const node)
 {
   if (find_node(node, 0) > 0)

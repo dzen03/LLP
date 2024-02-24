@@ -26,7 +26,7 @@ int relationship_equal(int64_t current_relationship_addr, const struct runtime_r
 
 int64_t find_node(const struct runtime_node* node, int64_t starting_node_addr);
 int64_t find_relationship(const struct runtime_relationship* relationship, int64_t* starting_node_addr);
-void print_relationships(const struct runtime_relationship* relationship);
+//void print_relationships(const struct runtime_relationship* relationship);
 
 // without relationships
 int add_node(const struct runtime_node* node);

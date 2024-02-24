@@ -42,10 +42,10 @@ Canonical data:
 
 I've got:
 ``` 
-{{name: Paula Wilson}, }-[purchased]-{{country: USA}, {zip: 87110}, }
-{{name: Jose Pavarotti}, }-[purchased]-{{country: USA}, {zip: 83720}, }
-{{name: Art Braunschweiger}, }-[purchased]-{{country: USA}, {zip: 82520}, }
-{{name: Liu Wong}, }-[purchased]-{{country: USA}, {zip: 59801}, }
+{(name: "Paula Wilson")} -- [purchased] -- {(country: "USA")(zip: 87110)}
+{(name: "Jose Pavarotti")} -- [purchased] -- {(country: "USA")(zip: 83720)}
+{(name: "Art Braunschweiger")} -- [purchased] -- {(country: "USA")(zip: 82520)}
+{(name: "Liu Wong")} -- [purchased] -- {(country: "USA")(zip: 59801)}
 ```
 
 *IT WORKS!!!*

@@ -225,12 +225,56 @@ int send_to_server(std::string& buff) {
   }
   std::cout << "Data Sent\n" << std::endl;
 
-  if (recv(sock, server_reply, BUFFER_SIZE, 0) < 0) {
+  int64_t tmp = recv(sock, server_reply, BUFFER_SIZE, 0);
+  if (tmp < 0) {
     std::cout << "recv failed" << std::endl;
   }
 
-  std::cout << "Server reply: ";
-  std::cout << server_reply << std::endl;
+  lab3::Result* result = new lab3::Result();
+  result->ParseFromArray(server_reply, tmp);
+
+  std::cout << "Server reply: \n";
+
+  for (auto q: result->chains()) {
+    std::cout << "{";
+    for (auto qq : q.nodes(0).fields()) {
+      std::cout << "(" << qq.key() << ": ";
+      switch (qq.type()) {
+        case lab3::INT:
+          std::cout << qq.int_value();
+          break;
+        case lab3::DOUBLE:
+          std::cout << qq.double_value();
+          break;
+        case lab3::STRING:
+          std::cout << '"' << qq.string_value() << '"';
+          break;
+      }
+      std::cout << ")";
+    }
+
+    std::cout << "} -- [" << q.relations(0).name() << "] -- {";
+
+    for (auto qq : q.nodes(1).fields()) {
+      std::cout << "(" << qq.key() << ": ";
+      switch (qq.type()) {
+        case lab3::INT:
+          std::cout << qq.int_value();
+          break;
+        case lab3::DOUBLE:
+          std::cout << qq.double_value();
+          break;
+        case lab3::STRING:
+          std::cout << '"' << qq.string_value() << '"';
+          break;
+      }
+      std::cout << ")";
+    }
+
+    std::cout << "}\n";
+  }
+
+//  std::cout << server_reply << std::endl;
 
   close(sock);
   return 0;

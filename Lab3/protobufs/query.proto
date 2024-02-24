@@ -53,3 +53,32 @@ enum VALUE_TYPE {
   DOUBLE = 3;
   BOOL = 4;
 }
+
+message Result {
+  message Chain {
+    message Node {
+      message Field {
+        string key = 1;
+        VALUE_TYPE type = 2;
+        oneof value {
+          string string_value = 3;
+          int64 int_value = 4;
+          double double_value = 5;
+        }
+      }
+      repeated Field fields = 1;
+    }
+    message Relation {
+      string name = 1;
+      enum DIRECTIONS {
+        BIDIRECTIONAL = 0;
+        LEFT_TO_RIGHT = 1;
+        RIGHT_TO_LEFT = 2;
+      }
+      DIRECTIONS direction = 2;
+    }
+    repeated Node nodes = 1;
+    repeated Relation relations = 2;
+  }
+  repeated Chain chains = 1;
+}
